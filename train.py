@@ -11,19 +11,17 @@ def train(
     episodes,
     max_steps,
     num_agents,
+    agent,
     visualize=False,
     visualization_interval=1,
     visualization_steps=1,
 ):
     env = MushroomEnvironment(num_patches=70, num_agents=num_agents)
-    agent = Agent(
-        state_size=3, action_size=1, hidden_state_size=8, num_agents=num_agents
-    )
 
     if visualize:
         vis = MushroomVisualizer(env.grid_size)
 
-    scores = []
+    scores: list[float] = []
 
     for episode in range(episodes):
         state = env.reset()
@@ -55,11 +53,15 @@ def train(
             if done:
                 break
 
-        scores.append(episode_scores)
+        mean_score = sum(episode_scores) / len(episode_scores)
+
+        scores.append(mean_score)
 
         print(
-            f"Episode: {episode}, Scores: {episode_scores}, Epsilon: {agent.epsilon:.2f}"
+            f"Episode: {episode}, Mean score: {mean_score} Epsilon: {agent.epsilon:.2f}, Scores: {episode_scores}"
         )
+
+        agent.save(f"agent_ep{episode}.pth")
 
     if visualize:
         vis.close()
@@ -73,8 +75,7 @@ def train(
 def plot_results(scores):
     scores = np.array(scores)
     plt.figure(figsize=(10, 5))
-    for i in range(scores.shape[1]):
-        plt.plot(scores[:, i], label=f"Agent {i+1}")
+    plt.plot(scores)
     plt.title("Training Progress")
     plt.xlabel("Episode")
     plt.ylabel("Score")
@@ -88,18 +89,21 @@ if __name__ == "__main__":
     num_agents = 40
     visualize = True
     visualization_interval = 1
-    visualization_steps = 1
+    visualization_steps = 100
+    agent = Agent(
+        state_size=3, action_size=1, hidden_state_size=8, num_agents=num_agents
+    )
 
     scores = train(
         episodes,
         max_steps,
         num_agents,
+        agent,
         visualize,
         visualization_interval,
         visualization_steps,
     )
     plot_results(scores)
-
-    # Save the trained agents
-    agent = Agent(state_size=3, action_size=4, num_agents=num_agents)
-    agent.save("mushroom_agents.pth")
+    print("Saving...", end=" ")
+    agent.save("agent.pth")
+    print("done")

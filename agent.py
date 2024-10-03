@@ -5,17 +5,18 @@ import torch.optim as optim
 
 
 class MushroomAgent(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, state_size):
+    def __init__(self, input_size, hidden_size, output_size, state_size, device):
         super(MushroomAgent, self).__init__()
         self.fc1 = nn.Linear(input_size + state_size, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size)
         self.fc3 = nn.Linear(hidden_size, output_size)
         self.state_size = state_size
         self.state_decoder = nn.Linear(hidden_size, state_size)
+        self.device = device
 
     def forward(self, x, hidden_state=None):
         if hidden_state is None:
-            x = torch.cat((x, torch.zeros(x.size(0), self.state_size)), dim=1)
+            x = torch.cat((x, torch.zeros(x.size(0), self.state_size).to(self.device)), dim=1)
         else:
             x = torch.cat((x, hidden_state), dim=1)
         x = torch.relu(self.fc1(x))
@@ -48,7 +49,7 @@ class Agent:
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = MushroomAgent(
-            state_size, hidden_size, action_size, hidden_state_size
+            state_size, hidden_size, action_size, hidden_state_size, self.device
         ).to(self.device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=lr)
 
