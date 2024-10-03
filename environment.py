@@ -85,6 +85,10 @@ class MushroomEnvironment(gym.Env):
 
             # Apply toroidal geometry
             self.agent_positions[i] = self.agent_positions[i] % self.grid_size
+            if self.agent_positions[i][0] < 0:
+                self.agent_positions[i][0] += self.grid_size
+            if self.agent_positions[i][1] < 0:
+                self.agent_positions[i][1] += self.grid_size
 
             # Check for mushroom
             grid_x, grid_y = np.floor(self.agent_positions[i]).astype(int)
