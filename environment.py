@@ -22,8 +22,10 @@ class MushroomEnvironment(gym.Env):
         self.patch_size_range = patch_size_range
         self.num_agents = num_agents
 
-        # Action space: 0: up, 1: right, 2: down, 3: left
-        self.action_space = spaces.Discrete(4)
+        # Action space: continuous angle in radians
+        self.action_space = spaces.Box(
+            low=0, high=2 * np.pi, shape=(1,), dtype=np.float32
+        )
 
         # Observation space: [x, y, steps_since_last_pickup] for each agent
         self.observation_space = spaces.Box(
@@ -38,15 +40,7 @@ class MushroomEnvironment(gym.Env):
     def reset(self):
         self.grid = np.zeros((self.grid_size, self.grid_size), dtype=np.int8)
         self._generate_mushroom_patches()
-        self.agent_positions = np.array(
-            [
-                [
-                    np.random.randint(0, self.grid_size),
-                    np.random.randint(0, self.grid_size),
-                ]
-                for _ in range(self.num_agents)
-            ]
-        )
+        self.agent_positions = np.random.rand(self.num_agents, 2) * self.grid_size
         self.steps_since_pickup = np.zeros(self.num_agents, dtype=np.int32)
         self.total_steps = 0
         self.mushrooms_collected = np.zeros(self.num_agents, dtype=np.int32)
@@ -97,28 +91,21 @@ class MushroomEnvironment(gym.Env):
 
         for i, action in enumerate(actions):
             # Move agent
-            if action == 0:  # up
-                self.agent_positions[i, 0] = (
-                    self.agent_positions[i, 0] - 1
-                ) % self.grid_size
-            elif action == 1:  # right
-                self.agent_positions[i, 1] = (
-                    self.agent_positions[i, 1] + 1
-                ) % self.grid_size
-            elif action == 2:  # down
-                self.agent_positions[i, 0] = (
-                    self.agent_positions[i, 0] + 1
-                ) % self.grid_size
-            elif action == 3:  # left
-                self.agent_positions[i, 1] = (
-                    self.agent_positions[i, 1] - 1
-                ) % self.grid_size
+            dx = np.cos(action)
+            dy = np.sin(action)
+            self.agent_positions[i] += np.array([dx, dy])
+
+            # Ensure the agent stays within the grid
+            self.agent_positions[i] = np.clip(
+                self.agent_positions[i], 0, self.grid_size - 1
+            )
 
             # Check for mushroom
-            if self.grid[self.agent_positions[i, 0], self.agent_positions[i, 1]] == 1:
+            grid_x, grid_y = self.agent_positions[i].astype(int)
+            if self.grid[grid_x, grid_y] == 1:
                 rewards[i] = 1
                 self.mushrooms_collected[i] += 1
-                self.grid[self.agent_positions[i, 0], self.agent_positions[i, 1]] = 0
+                self.grid[grid_x, grid_y] = 0
                 self.steps_since_pickup[i] = 0
 
         done = self.total_steps >= self.max_steps
@@ -134,4 +121,3 @@ class MushroomEnvironment(gym.Env):
                 for i in range(self.num_agents)
             ]
         )
-

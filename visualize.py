@@ -1,6 +1,7 @@
 import numpy as np
 import pygame
 
+
 class MushroomVisualizer:
     def __init__(self, grid_size, cell_size=3):
         self.grid_size = grid_size
@@ -38,15 +39,14 @@ class MushroomVisualizer:
 
         # Draw agents
         for agent_pos in agent_positions:
-            pygame.draw.rect(
+            pygame.draw.circle(
                 self.screen,
                 self.colors["agent"],
                 (
-                    agent_pos[1] * self.cell_size,
-                    agent_pos[0] * self.cell_size,
-                    self.cell_size,
-                    self.cell_size,
+                    int(agent_pos[1] * self.cell_size),
+                    int(agent_pos[0] * self.cell_size),
                 ),
+                self.cell_size // 2,
             )
 
         pygame.display.flip()

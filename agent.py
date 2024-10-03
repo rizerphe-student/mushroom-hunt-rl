@@ -59,14 +59,14 @@ class Agent:
         actions = []
         for i, state in enumerate(states):
             if np.random.rand() <= self.epsilon:
-                actions.append(np.random.choice(self.action_size))
+                actions.append(np.random.uniform(0, 2 * np.pi))
             else:
                 state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
                 with torch.no_grad():
                     action_values, new_hidden_state = self.model(
                         state, self.hidden_states[i]
                     )
-                actions.append(torch.argmax(action_values).item())
+                actions.append(action_values.item() % (2 * np.pi))
                 self.hidden_states[i] = new_hidden_state
         return actions
 
@@ -74,15 +74,13 @@ class Agent:
         for i in range(self.num_agents):
             state = torch.FloatTensor(states[i]).unsqueeze(0).to(self.device)
             next_state = torch.FloatTensor(next_states[i]).unsqueeze(0).to(self.device)
+            action = torch.FloatTensor([actions[i]]).to(self.device)
             reward = torch.FloatTensor([rewards[i]]).to(self.device)
 
             q_values, _state = self.model(state, self.hidden_states[i])
-            next_q_values = self.model(next_state, _state)[0]
+            next_q_values, _ = self.model(next_state, _state)
 
-            target = q_values.clone()
-            target[0][actions[i]] = reward + self.gamma * torch.max(next_q_values) * (
-                1 - done
-            )
+            target = reward + self.gamma * next_q_values * (1 - done)
 
             loss = self.criterion(q_values, target)
             self.optimizer.zero_grad()

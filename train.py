@@ -17,7 +17,7 @@ def train(
 ):
     env = MushroomEnvironment(num_patches=70, num_agents=num_agents)
     agent = Agent(
-        state_size=3, action_size=4, hidden_state_size=8, num_agents=num_agents
+        state_size=3, action_size=1, hidden_state_size=8, num_agents=num_agents
     )
 
     if visualize:
@@ -67,6 +67,9 @@ def train(
     return scores
 
 
+# The rest of the file remains unchanged
+
+
 def plot_results(scores):
     scores = np.array(scores)
     plt.figure(figsize=(10, 5))
@@ -85,7 +88,7 @@ if __name__ == "__main__":
     num_agents = 40
     visualize = True
     visualization_interval = 1
-    visualization_steps = 100
+    visualization_steps = 1
 
     scores = train(
         episodes,
