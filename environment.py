@@ -13,6 +13,7 @@ class MushroomEnvironment(gym.Env):
         mushrooms_in_patch=50,
         patch_radius=10,
         num_agents=4,
+        pickup_chance=0.7,
     ):
         super(MushroomEnvironment, self).__init__()
 
@@ -23,6 +24,7 @@ class MushroomEnvironment(gym.Env):
         self.patch_radius = patch_radius
         self.num_mushrooms_per_center = mushrooms_in_patch
         self.num_agents = num_agents
+        self.pickup_chance = pickup_chance
 
         # Action space: continuous angle in radians
         self.action_space = spaces.Box(
@@ -86,7 +88,11 @@ class MushroomEnvironment(gym.Env):
 
             # Check for mushroom
             grid_x, grid_y = np.floor(self.agent_positions[i]).astype(int)
-            if self.grid[grid_x, grid_y] == 1:
+
+            if (
+                np.random.random() < self.pickup_chance
+                and self.grid[grid_x, grid_y] == 1
+            ):
                 rewards[i] = 1
                 self.mushrooms_collected[i] += 1
                 self.grid[grid_x, grid_y] = 0
