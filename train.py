@@ -15,6 +15,7 @@ def train(
     visualize: bool = False,
     visualization_interval: int = 1,
     visualization_steps: int = 1,
+    last_episode: int = -1
 ):
     env = MushroomEnvironment(num_patches=70, num_agents=num_agents)
 
@@ -23,7 +24,7 @@ def train(
 
     scores: list[float] = []
 
-    for episode in range(episodes):
+    for episode in range(last_episode, episodes):
         state = env.reset()
         episode_scores = np.zeros(num_agents)
 
@@ -90,10 +91,14 @@ if __name__ == "__main__":
     visualize = True
     visualization_interval = 1
     visualization_steps = 100
+
     agent = Agent(
         state_size=3, action_size=1, hidden_state_size=8, num_agents=num_agents
     )
-    agent.load("agent_ep0.pth")
+
+    last_episode = 0
+    if last_episode >= 0:
+        agent.load(f"agent_ep{0}.pth")
 
     scores = train(
         episodes,
@@ -103,6 +108,7 @@ if __name__ == "__main__":
         visualize,
         visualization_interval,
         visualization_steps,
+        last_episode,
     )
     plot_results(scores)
     print("Saving...", end=" ")

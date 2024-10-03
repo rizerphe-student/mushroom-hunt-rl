@@ -93,9 +93,21 @@ class MushroomEnvironment(gym.Env):
             # Check for mushroom
             grid_x, grid_y = np.floor(self.agent_positions[i]).astype(int)
 
+            try:
+                value = self.grid[grid_x, grid_y]
+            except IndexError:
+                print("Error getting grid value at:")
+                print(f"{grid_x, grid_y = }")
+                print(f"Agent positions at {i} are:")
+                print(self.agent_positions[i])
+                print("All agent positions:")
+                print(self.agent_positions)
+                grid_x, grid_y = self.grid_size//2, self.grid_size//2
+                value = self.grid[grid_x, grid_y]
+
             if (
                 np.random.random() < self.pickup_chance
-                and self.grid[grid_x, grid_y] == 1
+                and value == 1
             ):
                 rewards[i] = 1
                 self.mushrooms_collected[i] += 1
