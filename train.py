@@ -8,13 +8,13 @@ from visualize import MushroomVisualizer
 
 
 def train(
-    episodes,
-    max_steps,
-    num_agents,
-    agent,
-    visualize=False,
-    visualization_interval=1,
-    visualization_steps=1,
+    episodes: int,
+    max_steps: int,
+    num_agents: int,
+    agent: Agent,
+    visualize: bool = False,
+    visualization_interval: int = 1,
+    visualization_steps: int = 1,
 ):
     env = MushroomEnvironment(num_patches=70, num_agents=num_agents)
 
@@ -93,6 +93,7 @@ if __name__ == "__main__":
     agent = Agent(
         state_size=3, action_size=1, hidden_state_size=8, num_agents=num_agents
     )
+    agent.load("agent_ep0.pth")
 
     scores = train(
         episodes,

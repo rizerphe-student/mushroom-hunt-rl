@@ -71,6 +71,16 @@ class Agent:
                 self.hidden_states[i] = new_hidden_state
         return actions
 
+    def act_eval(self, states):
+        actions = []
+        for i, state in enumerate(states):
+            state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
+            with torch.no_grad():
+                action_values, _ = self.model(state, self.hidden_states[i])
+            actions.append(action_values.item() % (2 * np.pi))
+            self.hidden_states[i] = None
+        return actions
+
     def learn(self, states, actions, rewards, next_states, done):
         for i in range(self.num_agents):
             state = torch.FloatTensor(states[i]).unsqueeze(0).to(self.device)
