@@ -9,8 +9,9 @@ class MushroomEnvironment(gym.Env):
         grid_size=300,
         mushroom_ratio=0.01,
         max_steps=10000,
-        num_patches=10,
-        patch_size_range=(5, 20),
+        num_patches=50,
+        mushrooms_in_patch=50,
+        patch_radius=10,
         num_agents=4,
     ):
         super(MushroomEnvironment, self).__init__()
@@ -19,7 +20,8 @@ class MushroomEnvironment(gym.Env):
         self.mushroom_ratio = mushroom_ratio
         self.max_steps = max_steps
         self.num_patches = num_patches
-        self.patch_size_range = patch_size_range
+        self.patch_radius = patch_radius
+        self.num_mushrooms_per_center = mushrooms_in_patch
         self.num_agents = num_agents
 
         # Action space: continuous angle in radians
@@ -47,41 +49,25 @@ class MushroomEnvironment(gym.Env):
         return self._get_obs()
 
     def _generate_mushroom_patches(self):
-        total_mushrooms = int(self.grid_size * self.grid_size * self.mushroom_ratio)
-        mushrooms_placed = 0
-
-        for _ in range(self.num_patches):
-            if mushrooms_placed >= total_mushrooms:
-                break
-
-            patch_size = np.random.randint(
-                self.patch_size_range[0], self.patch_size_range[1] + 1
-            )
-            patch_center = np.random.randint(0, self.grid_size, size=2)
-
-            for i in range(
-                patch_center[0] - patch_size // 2, patch_center[0] + patch_size // 2
-            ):
-                for j in range(
-                    patch_center[1] - patch_size // 2, patch_center[1] + patch_size // 2
+        centers = np.random.randint(0, self.grid_size, size=(self.num_patches, 2))
+        for center in centers:
+            mushrooms_placed = 0
+            while mushrooms_placed < self.num_mushrooms_per_center:
+                x = np.random.randint(
+                    max(0, center[0] - self.patch_radius),
+                    min(self.grid_size, center[0] + self.patch_radius + 1),
+                )
+                y = np.random.randint(
+                    max(0, center[1] - self.patch_radius),
+                    min(self.grid_size, center[1] + self.patch_radius + 1),
+                )
+                if (
+                    self.grid[x, y] == 0
+                    and np.sqrt((x - center[0]) ** 2 + (y - center[1]) ** 2)
+                    <= self.patch_radius
                 ):
-                    if 0 <= i < self.grid_size and 0 <= j < self.grid_size:
-                        if (
-                            np.random.random() < 0.7
-                        ):  # 70% chance of mushroom within patch
-                            if (
-                                self.grid[i, j] == 0
-                                and mushrooms_placed < total_mushrooms
-                            ):
-                                self.grid[i, j] = 1
-                                mushrooms_placed += 1
-
-        # If we haven't placed enough mushrooms, fill in randomly until we reach the desired ratio
-        while mushrooms_placed < total_mushrooms:
-            i, j = np.random.randint(0, self.grid_size, size=2)
-            if self.grid[i, j] == 0:
-                self.grid[i, j] = 1
-                mushrooms_placed += 1
+                    self.grid[x, y] = 1
+                    mushrooms_placed += 1
 
     def step(self, actions):
         self.total_steps += 1
