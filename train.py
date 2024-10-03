@@ -1,0 +1,102 @@
+import matplotlib.pyplot as plt
+import numpy as np
+from tqdm import tqdm
+
+from agent import Agent
+from environment import MushroomEnvironment
+from visualize import MushroomVisualizer
+
+
+def train(
+    episodes,
+    max_steps,
+    num_agents,
+    visualize=False,
+    visualization_interval=1,
+    visualization_steps=1,
+):
+    env = MushroomEnvironment(num_patches=70, num_agents=num_agents)
+    agent = Agent(
+        state_size=3, action_size=4, hidden_state_size=8, num_agents=num_agents
+    )
+
+    if visualize:
+        vis = MushroomVisualizer(env.grid_size)
+
+    scores = []
+
+    for episode in range(episodes):
+        state = env.reset()
+        episode_scores = np.zeros(num_agents)
+
+        for step in tqdm(range(max_steps)):
+            agent_states = [state[i * 3 : (i + 1) * 3] for i in range(num_agents)]
+            actions = agent.act(agent_states)
+            next_state, rewards, done, _ = env.step(actions)
+            agent.learn(
+                agent_states,
+                actions,
+                rewards,
+                [next_state[i * 3 : (i + 1) * 3] for i in range(num_agents)],
+                done,
+            )
+            state = next_state
+            episode_scores += rewards
+
+            if (
+                visualize
+                and episode % visualization_interval == 0
+                and step % visualization_steps == 0
+            ):
+                vis.draw(env.grid, env.agent_positions)
+                if vis.check_quit():
+                    return scores
+
+            if done:
+                break
+
+        scores.append(episode_scores)
+
+        print(
+            f"Episode: {episode}, Scores: {episode_scores}, Epsilon: {agent.epsilon:.2f}"
+        )
+
+    if visualize:
+        vis.close()
+
+    return scores
+
+
+def plot_results(scores):
+    scores = np.array(scores)
+    plt.figure(figsize=(10, 5))
+    for i in range(scores.shape[1]):
+        plt.plot(scores[:, i], label=f"Agent {i+1}")
+    plt.title("Training Progress")
+    plt.xlabel("Episode")
+    plt.ylabel("Score")
+    plt.legend()
+    plt.show()
+
+
+if __name__ == "__main__":
+    episodes = 1000
+    max_steps = 5000
+    num_agents = 40
+    visualize = True
+    visualization_interval = 1
+    visualization_steps = 100
+
+    scores = train(
+        episodes,
+        max_steps,
+        num_agents,
+        visualize,
+        visualization_interval,
+        visualization_steps,
+    )
+    plot_results(scores)
+
+    # Save the trained agents
+    agent = Agent(state_size=3, action_size=4, num_agents=num_agents)
+    agent.save("mushroom_agents.pth")
