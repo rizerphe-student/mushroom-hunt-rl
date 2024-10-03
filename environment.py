@@ -95,13 +95,11 @@ class MushroomEnvironment(gym.Env):
             dy = np.sin(action)
             self.agent_positions[i] += np.array([dx, dy])
 
-            # Ensure the agent stays within the grid
-            self.agent_positions[i] = np.clip(
-                self.agent_positions[i], 0, self.grid_size - 1
-            )
+            # Apply toroidal geometry
+            self.agent_positions[i] = self.agent_positions[i] % self.grid_size
 
             # Check for mushroom
-            grid_x, grid_y = self.agent_positions[i].astype(int)
+            grid_x, grid_y = np.floor(self.agent_positions[i]).astype(int)
             if self.grid[grid_x, grid_y] == 1:
                 rewards[i] = 1
                 self.mushrooms_collected[i] += 1
